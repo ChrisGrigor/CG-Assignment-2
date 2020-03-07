@@ -37,25 +37,6 @@
 #include "florp/game/SceneManager.h"
 #include "florp/app/Timing.h"
 #include "florp/app/Window.h"
-//Movement that is simple but can work for the light and objs
-struct TempTransform {
-
-	glm::vec3 SetPosition = glm::vec3(0.0f);
-	glm::vec3 SetRotation = glm::vec3(0.0f);
-	glm::vec3 SetScale = glm::vec3(1.0f);
-
-	glm::mat4 GetWorldTransform() const {
-		return
-			glm::translate(glm::mat4(1.0f), SetPosition) *
-			glm::mat4_cast(glm::quat(glm::degrees(SetRotation))) *
-			glm::scale(glm::mat4(1.0f), SetScale);
-
-	}
-};
-
-struct UpdateBehaviour {
-	std::function<void(entt::entity e, float dt)> Function;
-};
 
 ShadowLight& CreateShadowCaster(florp::game::Scene* scene, entt::entity* entityOut, glm::vec3 pos, glm::vec3 target, glm::vec3 up, float distance = 10.0f, float fov = 60.0f, glm::ivec2 bufferSize = { 1024, 1024 }, const char* name = nullptr)
 {
@@ -162,54 +143,6 @@ void SceneBuilder::Initialize()
 	emissiveShader->LoadPart(ShaderStageType::VertexShader, "shaders/lighting.vs.glsl");
 	emissiveShader->LoadPart(ShaderStageType::FragmentShader, "shaders/forward-emissive.fs.glsl");
 	emissiveShader->Link();
-
-	// Creating our 'console'
-	{
-		// Material for the frame
-		Material::Sptr consoleMat = std::make_shared<Material>(emissiveShader);
-		consoleMat->Set("s_Albedo", Texture2D::LoadFromFile("console_albedo.png", false, true, true));
-		consoleMat->Set("s_Emissive", Texture2D::LoadFromFile("console_emissive.png", false, true, true));
-		consoleMat->Set("a_EmissiveStrength", 4.0f); 
-
-		// Load the mesh for the frame
-		MeshData console = ObjLoader::LoadObj("console.obj", glm::vec4(1.0f));
-
-		// Create the entity, attach renderable, set position
-		entt::entity consoleEntt = scene->CreateEntity();
-		RenderableComponent& consoleRenderable = scene->Registry().assign<RenderableComponent>(consoleEntt);
-		consoleRenderable.Mesh = MeshBuilder::Bake(console);
-		consoleRenderable.Material = consoleMat;
-		Transform& t = scene->Registry().get<Transform>(consoleEntt);
-		t.SetPosition(glm::vec3(0.0f, -1.0f, -8.0f));
-
-		// We'll use a scrolling shader to make our screen more interesting
-		Shader::Sptr scrollShader = std::make_shared<Shader>();
-		scrollShader->LoadPart(ShaderStageType::VertexShader, "shaders/lighting.vs.glsl");
-		scrollShader->LoadPart(ShaderStageType::FragmentShader, "shaders/forward-scrolling.fs.glsl");
-		scrollShader->Link(); 
-
-		// We'll load in an image for our screen, and set it to be fairly strongly emmisive, and scroll along the y axis
-		Material::Sptr monitorMat = std::make_shared<Material>(scrollShader);
-		monitorMat->Set("s_Albedo", Texture2D::LoadFromFile("matrix.png", false, true, true));
-		monitorMat->Set("s_Emissive", Texture2D::LoadFromFile("matrix.png", false, true, true));
-		monitorMat->Set("a_EmissiveStrength", 2.0f);
-		monitorMat->Set("a_ScrollDir", glm::vec2(0.0f, 1.0f));
-
-		// We'll make a plane out of a flattened cube
-		MeshData data = MeshBuilder::Begin("Monitor");
-		MeshBuilder::AddAlignedCube(data, glm::vec3(0.0f), glm::vec3(0.41f, 0.36f, 0.0f));
-		Mesh::Sptr mesh = MeshBuilder::Bake(data);
-
-		// Attach a new entity to the console, give it a renderable, and position it juust right
-		entt::entity monitor = scene->CreateEntity();
-		RenderableComponent& renderable = scene->Registry().assign<RenderableComponent>(monitor);
-		renderable.Mesh = mesh;
-		renderable.Material = monitorMat;
-		Transform& t2 = scene->Registry().get<Transform>(monitor);
-		t2.SetParent(consoleEntt);
-		t2.SetPosition(glm::vec3(0.0f, 1.45f, -0.14f));
-		t2.SetEulerAngles(glm::vec3(-45.0f, 0.0f, 0.0f));
-	}
 		   	
 	// Load and set up our simple test material
 	Material::Sptr monkeyMat = std::make_shared<Material>(emissiveShader);
@@ -229,9 +162,7 @@ void SceneBuilder::Initialize()
 	Material::Sptr charMat = std::make_shared<Material>(shader);
 	charMat->Set("s_Albedo", Texture2D::LoadFromFile("Character_UVs.png", false, true, true));
 
-	// We'll use a constant to tell us how many monkeys to use
-	const int numMonkeys = 6;
-	const float step = glm::two_pi<float>() / numMonkeys; // Determine the angle between monkeys in radians
+	float step = glm::two_pi<float>() / numLights; // Determine the angle between monkeys in radians
 
 	//// We'll create a ring of monkeys
 	//for (int ix = 0; ix < numMonkeys; ix++) {
@@ -245,7 +176,7 @@ void SceneBuilder::Initialize()
 	//}
 	
 	// We'll create a ring of point lights behind each monkey (where each monkey used to be)
-	for (int ix = 0; ix < numMonkeys; ix++) {
+	for (int ix = 0; ix < numLights; ix++) {
 		// We'll attach an indicator cube to all the lights, and align it with the light's facing
 		entt::entity entity = scene->CreateEntity();
 		PointLightComponent& light = scene->Registry().assign<PointLightComponent>(entity);
@@ -283,7 +214,7 @@ void SceneBuilder::Initialize()
 		
 
 		auto lightPosition = [=](entt::entity e) {
-			glm::vec3 lightPos = CurrentRegistry().get<TempTransform>(test).SetPosition;
+			//glm::vec3 lightPos = CurrentRegistry().get<TempTransform>(test).SetPosition;
 			//Forward
 			if (window->IsKeyDown(florp::app::Key::I)) {
 				//charMat->Set("a_Lights[0].Pos", { lightPos.x, (lightPos.y + 0.4), 1 });
@@ -389,7 +320,7 @@ void SceneBuilder::Initialize()
 	scene->AddBehaviour<LightFlickerBehaviour>(lightEnt, 10.0f);
 		
 	// We'll create a ring of shadow casting lights, one for each monkey
-	for (int ix = 0; ix < numMonkeys; ix++) {
+	for (int ix = 0; ix < numLights; ix++) {
 		entt::entity lightEnt = entt::null;
 		auto& light = CreateShadowCaster(
 			scene, &lightEnt, 

@@ -18,6 +18,9 @@ public:
 	// Allows us to render some UI to edit our lighting parameters
 	virtual void RenderGUI() override;
 
+
+	//how many lights to use
+	int numLights = 10; //repeat but just don't want to inherit other class to avoid errors
 protected:
 	florp::graphics::Mesh::Sptr myFullscreenQuad;        // Used for our post processing passes
 	florp::graphics::Shader::Sptr myShader;              // Used to handle depth generation for regular shadow casters

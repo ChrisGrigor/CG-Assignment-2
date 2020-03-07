@@ -93,7 +93,7 @@ void PostLayer::Initialize() {
 	}
 
 	// Depth of field effect
-	if (false) {
+	if (true) {
 
 		// Our inputs will be the previous pass, and the depth buffer from the main pass
 		auto dof = __CreatePass("shaders/post/depth_of_field.fs.glsl");
@@ -102,13 +102,13 @@ void PostLayer::Initialize() {
 		myPasses.push_back(dof);
 
 		// We'll set our default values
-		dof->Shader->SetUniform("a_FocalDepth", 3.0f);
+		dof->Shader->SetUniform("a_FocalDepth", 5.0f);
 		dof->Shader->SetUniform("a_LenseDistance", 1.0f);
 		dof->Shader->SetUniform("a_Aperture", 20.0f);
 
 		// Set up the stuff for making this pass editable from the GUI
 		dof->Name = "Depth of Field";
-		dof->ConfParameters.push_back(__CreateFloatParam("a_FocalDepth", 3.0f, 0.1f, 100.0f)); 
+		dof->ConfParameters.push_back(__CreateFloatParam("a_FocalDepth", 5.0f, 0.1f, 100.0f)); 
 		dof->ConfParameters.push_back(__CreateFloatParam("a_LenseDistance", 1.0f, 0.001f, 5.0f));
 		dof->ConfParameters.push_back(__CreateFloatParam("a_Aperture", 20.0f, 0.1f, 60.0f));
 

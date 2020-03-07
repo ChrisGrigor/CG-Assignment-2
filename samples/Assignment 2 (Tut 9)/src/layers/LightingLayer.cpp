@@ -289,6 +289,7 @@ void LightingLayer::PostProcessShadows() {
 			myShadowComposite->SetUniform("a_LightDir", glm::mat3(lightspaceMatrix) * glm::vec3(0, 0, -1));
 			myShadowComposite->SetUniform("a_LightColor", light.Color);
 			myShadowComposite->SetUniform("a_LightAttenuation", light.Attenuation);
+			myShadowComposite->SetUniform("a_EnabledLights", numLights);
 
 			// Bind the light's depth and render the quad
 			light.ShadowBuffer->Bind(2, RenderTargetAttachment::Depth);
