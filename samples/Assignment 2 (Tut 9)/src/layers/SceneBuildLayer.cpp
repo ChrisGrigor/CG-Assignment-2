@@ -53,6 +53,10 @@ struct TempTransform {
 	}
 };
 
+struct UpdateBehaviour {
+	std::function<void(entt::entity e, float dt)> Function;
+};
+
 ShadowLight& CreateShadowCaster(florp::game::Scene* scene, entt::entity* entityOut, glm::vec3 pos, glm::vec3 target, glm::vec3 up, float distance = 10.0f, float fov = 60.0f, glm::ivec2 bufferSize = { 1024, 1024 }, const char* name = nullptr)
 {
 	// The depth attachment is a texture, with 32 bits for depth
@@ -274,35 +278,26 @@ void SceneBuilder::Initialize()
 		renderable.Mesh = MeshBuilder::Bake(dataChar);
 		renderable.Material = charMat;
 		Transform& t = scene->Registry().get<Transform>(test);
-		scene->AddBehaviour<MoveBehaviour>(test, glm::vec3(5.5f, 0.0f, 0.0f));
 		//Movement
-		auto moveJohnny = [=](entt::entity e, float dt) {
+		scene->AddBehaviour<MoveBehaviour>(test, glm::vec3(1.0f));
+		
+
+		auto lightPosition = [=](entt::entity e) {
 			glm::vec3 lightPos = CurrentRegistry().get<TempTransform>(test).SetPosition;
 			//Forward
 			if (window->IsKeyDown(florp::app::Key::I)) {
-				//setting the direction Johnny will look
-				CurrentRegistry().get<TempTransform>(test).SetRotation = glm::vec3(0, 0, 0);
-				//Setting his movement speed
-				CurrentRegistry().get<TempTransform>(test).SetPosition += glm::vec3(0.0, 3.0 * florp::app::Timing::DeltaTime, 0);
 				//charMat->Set("a_Lights[0].Pos", { lightPos.x, (lightPos.y + 0.4), 1 });
 			}
 			//Back
 			if (window->IsKeyDown(florp::app::Key::K)) {
-				CurrentRegistry().get<TempTransform>(test).SetRotation = glm::vec3(0, 0, -80);
-				CurrentRegistry().get<TempTransform>(test).SetPosition += glm::vec3(0.0, -3.0 * florp::app::Timing::DeltaTime, 0);
 				//charMat->Set("a_Lights[0].Pos", { lightPos.x, (lightPos.y + -0.4), 1 });
 			}
 			//Right
 			if (window->IsKeyDown(florp::app::Key::L)) {
-				CurrentRegistry().get<TempTransform>(test).SetRotation = glm::vec3(0, 0, 40);
-				CurrentRegistry().get<TempTransform>(test).SetPosition += glm::vec3(3.0 * florp::app::Timing::DeltaTime, 0.0, 0);
 				//charMat->Set("a_Lights[0].Pos", { (lightPos.x + 0.4), lightPos.y, 1 });
 			}
 			//Left
-			if (window->IsKeyDown(florp::app::Key::J)) {
-				CurrentRegistry().get<TempTransform>(test).SetRotation = glm::vec3(0, 0, -40);
-				CurrentRegistry().get<TempTransform>(test).SetPosition += glm::vec3(-3.0 * florp::app::Timing::DeltaTime, 0, 0);
-				//charMat->Set("a_Lights[0].Pos", { (lightPos.x + -0.4), lightPos.y, 1 });
+			if (window->IsKeyDown(florp::app::Key::J)) {//charMat->Set("a_Lights[0].Pos", { (lightPos.x + -0.4), lightPos.y, 1 });
 			}
 		};
 
