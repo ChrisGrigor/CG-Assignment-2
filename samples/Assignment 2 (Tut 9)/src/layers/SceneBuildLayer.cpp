@@ -150,6 +150,10 @@ void SceneBuilder::Initialize()
 	monkeyMat->Set("s_Emissive", Texture2D::LoadFromFile("monkey_emissive.png", false, true, true)); 
 	monkeyMat->Set("a_EmissiveStrength", 4.0f);
 
+	// Monkey Wireframe Material (wireframe require its own material)
+	Material::Sptr matWireframe = std::make_shared<Material>(shader);
+	matWireframe->Set("s_Albedo", Texture2D::LoadFromFile("marble.png", false, true, true));
+
 	// We'll have another material for the marble without any emissive spots
 	Material::Sptr marbleMat = std::make_shared<Material>(shader);
 	marbleMat->Set("s_Albedo", Texture2D::LoadFromFile("marble.png", false, true, true));
@@ -196,6 +200,8 @@ void SceneBuilder::Initialize()
 		RenderableComponent& renderable = scene->Registry().assign<RenderableComponent>(test);
 		renderable.Mesh = MeshBuilder::Bake(data);
 		renderable.Material = monkeyMat;
+		renderable.Material->RasterState.FrontFaceFill = FillMode::Fill;
+		renderable.Material->RasterState.BackFaceFill = FillMode::Fill;
 		Transform& t = scene->Registry().get<Transform>(test);
 		// Make our monkeys spin around the center
 		scene->AddBehaviour<RotateBehaviour>(test, glm::vec3(45.0f, 45.0f, 45.0f));
@@ -208,6 +214,8 @@ void SceneBuilder::Initialize()
 		RenderableComponent& renderable = scene->Registry().assign<RenderableComponent>(test);
 		renderable.Mesh = MeshBuilder::Bake(dataChar);
 		renderable.Material = charMat;
+			renderable.Material->RasterState.FrontFaceFill = FillMode::Fill;
+		renderable.Material->RasterState.BackFaceFill = FillMode::Fill;
 		Transform& t = scene->Registry().get<Transform>(test);
 		//Movement
 		scene->AddBehaviour<MoveBehaviour>(test, glm::vec3(1.0f));
@@ -243,6 +251,8 @@ void SceneBuilder::Initialize()
 		RenderableComponent& renderable = scene->Registry().assign<RenderableComponent>(test);
 		renderable.Mesh = MeshBuilder::Bake(dataLevel);
 		renderable.Material = roomMat;
+		renderable.Material->RasterState.FrontFaceFill = FillMode::Fill;
+		renderable.Material->RasterState.BackFaceFill = FillMode::Fill;
 		Transform& t = scene->Registry().get<Transform>(test);
 		t.SetPosition({ 0.0f, -0.77f, 0.0f });
 	}
@@ -308,7 +318,8 @@ void SceneBuilder::Initialize()
 		RenderableComponent& renderable = scene->Registry().assign<RenderableComponent>(camera);
 		renderable.Mesh = indicatorMesh;
 		renderable.Material = marbleMat;
-
+		renderable.Material->RasterState.FrontFaceFill = FillMode::Fill;
+		renderable.Material->RasterState.BackFaceFill = FillMode::Fill;
 	}
 
 	// We'll create a projector to cast our smile on the floor
@@ -338,7 +349,9 @@ void SceneBuilder::Initialize()
 		entt::entity entity = scene->CreateEntity();
 		RenderableComponent& renderable = scene->Registry().assign<RenderableComponent>(entity);
 		renderable.Mesh = indicatorMesh;
-		renderable.Material = marbleMat;
+		renderable.Material = matWireframe;
+		renderable.Material->RasterState.FrontFaceFill = FillMode::Line;
+		renderable.Material->RasterState.BackFaceFill = FillMode::Line;
 		Transform& t = scene->Registry().get<Transform>(entity);
 		t.SetPosition(glm::vec3(glm::cos(step * ix) * 9.0f, 2.0f, glm::sin(step * ix) * 9.0f));
 	}
@@ -355,5 +368,7 @@ void SceneBuilder::Initialize()
 		RenderableComponent& renderable = scene->Registry().assign<RenderableComponent>(entity);
 		renderable.Mesh = MeshBuilder::Bake(data);
 		renderable.Material = marbleMat;
+		renderable.Material->RasterState.FrontFaceFill = FillMode::Fill;
+		renderable.Material->RasterState.BackFaceFill = FillMode::Fill;
 	}
 }
