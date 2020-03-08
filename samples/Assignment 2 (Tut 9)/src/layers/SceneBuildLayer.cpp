@@ -167,17 +167,6 @@ void SceneBuilder::Initialize()
 	charMat->Set("s_Albedo", Texture2D::LoadFromFile("Character_UVs.png", false, true, true));
 
 	float step = glm::two_pi<float>() / numLights; // Determine the angle between monkeys in radians
-
-	//// We'll create a ring of monkeys
-	//for (int ix = 0; ix < numMonkeys; ix++) {
-	//	entt::entity test = scene->CreateEntity();
-	//	RenderableComponent& renderable = scene->Registry().assign<RenderableComponent>(test);
-	//	renderable.Mesh = MeshBuilder::Bake(data);
-	//	renderable.Material = monkeyMat;
-	//	Transform& t = scene->Registry().get<Transform>(test);
-	//	t.SetPosition(glm::vec3(glm::cos(step * ix) * 5.0f, 0.0f, glm::sin(step * ix) * 5.0f));
-	//	t.SetEulerAngles(glm::vec3(-90.0f, glm::degrees(-step * ix), 0.0f));
-	//}
 	
 	// We'll create a ring of point lights behind each monkey (where each monkey used to be)
 	for (int ix = 0; ix < numLights; ix++) {
@@ -321,14 +310,6 @@ void SceneBuilder::Initialize()
 		renderable.Material->RasterState.FrontFaceFill = FillMode::Fill;
 		renderable.Material->RasterState.BackFaceFill = FillMode::Fill;
 	}
-
-	// We'll create a projector to cast our smile on the floor
-	entt::entity lightEnt = entt::null;
-	auto& light = CreateShadowCaster(scene, &lightEnt, glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), 25.0f);
-	light.Color = glm::vec3(1.0f, 1.0f, 1.0f) * 0.1f;
-	light.Attenuation = 1.0f / 15.0f; 
-	light.ProjectorImage = Texture2D::LoadFromFile("light_projection.png", false, false, true);
-	scene->AddBehaviour<LightFlickerBehaviour>(lightEnt, 10.0f);
 		
 	// We'll create a ring of shadow casting lights, one for each monkey
 	for (int ix = 0; ix < numLights; ix++) {
