@@ -13,14 +13,30 @@ layout(binding = 3) uniform sampler2D a_GEmissive; // NEW
 
 uniform float a_Exposure;
 
+
+//For light toggling
+const int MAX_LIGHTS = 25;
+struct Light{
+	vec3  Pos;
+	vec3  Color;
+	float Attenuation;
+};
+uniform Light a_Lights[MAX_LIGHTS];
+uniform int a_EnabledLights;
+
 vec3 ToneMap(vec3 color, float exposure) {
 	const float gamma = 2.2;
 	vec3 result = vec3(1.0) - exp(-color * exposure);
+	
 	result = pow(result, vec3(1.0 / gamma));
 	return result;
 }
 
 void main() {
+
+	//for (int i = 0; (i < a_EnabledLights) && (i < MAX_LIGHTS); i++) {
+	//
+	//}
 	vec4 color = texture(a_GColor, inUV) * (texture(a_HdrLightAccum, inUV) + texture(a_GEmissive, inUV));/* TODO: Add the HDR and emissive, and multiply the result by the albedo */; // Updated
 	outColor = vec4(ToneMap(color.rgb, a_Exposure), 1.0);
 }

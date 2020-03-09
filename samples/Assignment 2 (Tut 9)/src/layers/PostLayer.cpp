@@ -65,11 +65,11 @@ void PostLayer::Initialize() {
 		vBlur->Output->SetDebugName("VerticalBuffer");
 
 		// Perform 10 passes of blurring
-		for (int ix = 0; ix < 10; ix++) {
+		for (int ix = 0; ix < 8; ix++) {
 			myPasses.push_back(hBlur);
 			myPasses.push_back(vBlur);
 		}
-
+		
 		// Our additive pass will add the color from the scene, and add the blurred highlight to it
 		auto additive = __CreatePass("shaders/post/additive_blend.fs.glsl");
 		additive->Inputs.push_back({ nullptr });
@@ -78,7 +78,7 @@ void PostLayer::Initialize() {
 		myPasses.push_back(additive);
 
 		// We will toggle all the bloom stuff with one key
-		myToggleInputs[florp::app::Key::B] = { additive, hBlur, vBlur, highlight };
+		myToggleInputs[florp::app::Key::Eight] = { additive, hBlur, vBlur, highlight };
 	}
 
 	if (false) {
@@ -102,7 +102,7 @@ void PostLayer::Initialize() {
 		myPasses.push_back(dof);
 
 		// We'll set our default values
-		dof->Shader->SetUniform("a_FocalDepth", 5.0f);
+		dof->Shader->SetUniform("a_FocalDepth", 4.0f);
 		dof->Shader->SetUniform("a_LenseDistance", 1.0f);
 		dof->Shader->SetUniform("a_Aperture", 20.0f);
 
@@ -113,8 +113,21 @@ void PostLayer::Initialize() {
 		dof->ConfParameters.push_back(__CreateFloatParam("a_Aperture", 20.0f, 0.1f, 60.0f));
 
 		// We will toggle DOF on and off with one key
-		myToggleInputs[florp::app::Key::T] = { dof };
+		myToggleInputs[florp::app::Key::Nine] = { dof };
 	}
+
+	// Toon Shading
+	//if (true) {
+	//	// Our inputs will be the previous pass, and the depth buffer from the main pass
+	//	auto Toon = __CreatePass("shaders/post/Toon_Shading.fs.glsl");
+	//
+	//	// We'll set our default values
+	//	Toon->Shader->SetUniform("light_pos", 4.0f);
+	//	Toon->Shader->SetUniform("eye_pos", 1.0f);
+	//
+	//	// We will toggle DOF on and off with one key
+	//	myToggleInputs[florp::app::Key::Zero] = { Toon };
+	//}
 }
 
 void PostLayer::OnWindowResize(uint32_t width, uint32_t height) {

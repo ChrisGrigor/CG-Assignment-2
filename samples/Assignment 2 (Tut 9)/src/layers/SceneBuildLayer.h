@@ -5,7 +5,7 @@ class SceneBuilder : public florp::app::ApplicationLayer {
 public:
 	void Initialize() override;
 
-
+	
 	//how many lights to use
-	int numLights = 10;
+	int numLights = 25; //Max 25
 };

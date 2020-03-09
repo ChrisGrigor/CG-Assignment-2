@@ -14,4 +14,12 @@ private:
 	float myFlickerSpeed;
 	float myTimingOffset;
 	float myMin, myMax;
+
+	//Get light movement
+	glm::vec3 newPosition;
+	float angle = 4.7;
+	float radius = 10;
+
+	float angleIncrement = 1.5;
+	float radiusIncrement = 5;
 };

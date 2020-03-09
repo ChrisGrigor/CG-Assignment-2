@@ -31,6 +31,17 @@ vec3 UnpackNormal(vec3 rawNormal) {
 	return (rawNormal - HALF) * DOUBLE;
 }
 
+
+//For light toggling
+const int MAX_LIGHTS = 25;
+struct Light{
+	vec3  Pos;
+	vec3  Color;
+	float Attenuation;
+};
+uniform Light a_Lights[MAX_LIGHTS];
+uniform int a_EnabledLights;
+
 // Calculates a world position from the main camera's depth buffer
 vec4 GetWorldPos(vec2 uv) {
 	// Get the depth buffer value at this pixel.    
@@ -99,8 +110,13 @@ void main() {
 	// Extract our normal from the G Buffer
 	vec3 normal = UnpackNormal(texture(s_GNormal, inUV).rgb);
 
+	vec3 result;
+
+
 	// Calculate our lighting for this point light
-	vec3 result = BlinnPhong(pos.xyz, normal, a_LightPos, a_LightColor, a_LightAttenuation);
+	for (int i = 0; (i < a_EnabledLights) && (i < MAX_LIGHTS); i++) {
+		result = BlinnPhong(pos.xyz, normal, a_LightPos, a_LightColor, a_LightAttenuation);
+	}
 
 	// Output the result
 	outColor = vec4(result, 1.0);

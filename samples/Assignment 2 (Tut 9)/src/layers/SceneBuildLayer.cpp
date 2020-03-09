@@ -177,7 +177,7 @@ void SceneBuilder::Initialize()
 			glm::sin(-ix * step) + 1.0f, 
 			glm::cos(-ix * step) + 1.0f, 
 			glm::sin((-ix * step) + glm::pi<float>()) + 1.0f) / 2.0f * 0.1f;
-		light.Attenuation = 1.0f / 10.0f;
+		light.Attenuation = 1.0f / 2.5f;
 		Transform& t = scene->Registry().get<Transform>(entity);
 		t.SetPosition(glm::vec3(glm::cos(step * ix) * 20.0f, 2.0f, glm::sin(step * ix) * 20.0f));
 		scene->AddBehaviour<LightFlickerBehaviour>(entity, 2.0f, 0.6f, 1.2f);
@@ -245,7 +245,7 @@ void SceneBuilder::Initialize()
 		Transform& t = scene->Registry().get<Transform>(test);
 		t.SetPosition({ 0.0f, -0.77f, 0.0f });
 	}
-
+	
 	// We'll use a tiny cube to cast a shadow from our camera, and to indicate where the light sources are
 	MeshData indicatorCube = MeshBuilder::Begin();
 	MeshBuilder::AddAlignedCube(indicatorCube, glm::vec3(0.0f, 0, 0.0), glm::vec3(0.1f, 0.1f, 0.1f));
@@ -336,7 +336,34 @@ void SceneBuilder::Initialize()
 		Transform& t = scene->Registry().get<Transform>(entity);
 		t.SetPosition(glm::vec3(glm::cos(step * ix) * 9.0f, 2.0f, glm::sin(step * ix) * 9.0f));
 	}
-			
+	//Main Light
+	{
+		entt::entity lightEnt1 = entt::null;
+		auto& light1 = CreateShadowCaster(
+			scene, &lightEnt1,
+			glm::vec3(9.0f, 3.5f, 9.0f),											 // Light in Center
+			glm::vec3(0.0f),                                                         // Look at the center
+			glm::vec3(0.0f, 1.0f, 0.0f),                                             // Y is up
+			25.0f,                                                                   // The far plane is 25 units away
+			75.0f);                                                                  // We'll use a 75 degree field of view
+		// We'll generate a color for the light
+		light1.Color = glm::vec3(1.0f, 0.64f, 0.0f) * 0.2f;
+		light1.Attenuation = 1.0f / 5.0f;
+		scene->AddBehaviour<LightFlickerBehaviour>(lightEnt1, 5.0f, 0.5f, 1.0f);
+		//Movement
+		//Transform& t1 = scene->Registry().get<Transform>(lightEnt1);
+		//scene->AddBehaviour<MoveBehaviour>(lightEnt1, glm::vec3(1.0f));
+	
+		// We'll attach an indicator cube to all the lights, and align it with the light's facing
+		entt::entity entity = scene->CreateEntity();
+		RenderableComponent& renderable = scene->Registry().assign<RenderableComponent>(entity);
+		renderable.Mesh = indicatorMesh;
+		renderable.Material = matWireframe;
+		renderable.Material->RasterState.FrontFaceFill = FillMode::Line;
+		renderable.Material->RasterState.BackFaceFill = FillMode::Line;
+		Transform& t = scene->Registry().get<Transform>(entity);
+		scene->AddBehaviour<MoveBehaviour>(entity, glm::vec3(1.0f));
+	}
 	// Our floor plane
 	{
 		// Building the mesh

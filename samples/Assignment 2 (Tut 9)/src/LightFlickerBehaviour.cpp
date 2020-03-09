@@ -4,6 +4,7 @@
 #include "Logging.h"
 #include "ShadowLight.h"
 #include "florp/app/Timing.h"
+#include "florp/game/Transform.h"
 
 LightFlickerBehaviour::LightFlickerBehaviour(float speed, float min, float max) :
 	myFlickerSpeed(speed), myMin(min), myMax(max) { }
@@ -41,4 +42,17 @@ void LightFlickerBehaviour::Update(entt::entity entity) {
 		ShadowLight& light = ecs.get<ShadowLight>(entity);
 		light.Attenuation = attenuation;
 	}
+
+
+	//using namespace florp::app;
+	//auto& transform = CurrentRegistry().get<florp::game::Transform>(entity);
+	//newPosition.x = cos(angle) * radius;
+	//newPosition.z = sin(angle) * radius;
+	//
+	//transform.SetPosition(newPosition);
+	//
+	//angle += angleIncrement * florp::app::Timing::DeltaTime;
+	//radius += radiusIncrement * florp::app::Timing::DeltaTime;
+
+
 }

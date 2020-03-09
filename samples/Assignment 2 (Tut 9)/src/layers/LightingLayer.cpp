@@ -309,6 +309,7 @@ void LightingLayer::PostProcessLights() {
 	
 	// We set up all the camera state once, since we use the same shader for compositing all shadow-casting lights
 	myPointLightComposite->Use();
+	myPointLightComposite->SetUniform("a_EnabledLights", numLights);
 	myPointLightComposite->SetUniform("a_View", state.Current.View);
 	myPointLightComposite->SetUniform("a_ProjectionInv", glm::inverse(state.Current.Projection));
 	myPointLightComposite->SetUniform("a_ViewProjectionInv", glm::inverse(state.Current.ViewProjection));
@@ -330,6 +331,7 @@ void LightingLayer::PostProcessLights() {
 			glm::vec3 pos = glm::vec3(state.Current.View * transform.GetWorldTransform() * glm::vec4(0, 0, 0, 1));
 			
 			// Upload the light info to the shader
+			myPointLightComposite->SetUniform("a_EnabledLights", numLights);
 			myPointLightComposite->SetUniform("a_LightPos", pos);
 			myPointLightComposite->SetUniform("a_LightColor", light.Color);
 			myPointLightComposite->SetUniform("a_LightAttenuation", light.Attenuation);
