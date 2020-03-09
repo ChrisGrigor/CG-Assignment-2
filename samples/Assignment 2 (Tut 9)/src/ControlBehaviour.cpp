@@ -23,17 +23,17 @@ void ControlBehaviour::Update(entt::entity entity) {
 	glm::vec3 translate = glm::vec3(0.0f);
 	glm::vec2 rotation = glm::vec2(0.0f);
 	if (window->IsKeyDown(Key::W))
-		translate.z -= 1.0f;
+		translate.z -= 2.0f;
 	if (window->IsKeyDown(Key::S))
-		translate.z += 1.0f;
+		translate.z += 2.0f;
 	if (window->IsKeyDown(Key::A))
-		translate.x -= 1.0f;
+		translate.x -= 2.0f;
 	if (window->IsKeyDown(Key::D))
-		translate.x += 1.0f;
+		translate.x += 2.0f;
 	if (window->IsKeyDown(Key::LeftControl))
-		translate.y -= 1.0f;
+		translate.y -= 2.0f;
 	if (window->IsKeyDown(Key::Space))
-		translate.y += 1.0f;
+		translate.y += 2.0f;
 
 	if (window->IsKeyDown(Key::Left))
 		rotation.x += 1.0f;

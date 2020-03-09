@@ -4,6 +4,9 @@
 #include "florp/game/SceneManager.h"
 #include "florp/app/Timing.h"
 
+#include "florp/game/IBehaviour.h"
+#include <GLM/glm.hpp>
+
 class RotateBehaviour : public florp::game::IBehaviour {
 public:
 	/*
@@ -22,6 +25,22 @@ private:
 	glm::vec3 mySpeed;
 };
 
+class MoveBehaviour : public florp::game::IBehaviour {
+public:
+	/*
+	 * Creates a new rotate behaviour with the given speed
+	 * @param speed The speed to rotate along each axis, in degrees per second
+	 */
+	MoveBehaviour(const glm::vec3& speed) : IBehaviour(), mySpeed(speed), myYawPitch(glm::vec2(0.0f)) {};
+	virtual ~MoveBehaviour() = default;
+
+	virtual void Update(entt::entity entity) override;
+
+private:
+	glm::vec3 mySpeed;
+	glm::vec2 myYawPitch;
+};
+
 class AxialSpinBehaviour : public florp::game::IBehaviour {
 public:
 	AxialSpinBehaviour(const glm::vec3& center, const glm::vec3& up, float speed) : IBehaviour(), myCenter(center), myUp(up), mySpeed(speed), myAngle(0.0f) {};
@@ -33,10 +52,10 @@ public:
 	}
 	
 	virtual void Update(entt::entity entity) override {
-		auto& transform = CurrentRegistry().get<florp::game::Transform>(entity);
-		myAngle += mySpeed * florp::app::Timing::DeltaTime;
-		glm::vec3 newPos = glm::translate(glm::mat4_cast(glm::angleAxis(glm::radians(myAngle), myUp)), myCenter) * glm::vec4(myStartingPos, 1.0f);
-		transform.SetPosition(newPos);
+		//auto& transform = CurrentRegistry().get<florp::game::Transform>(entity);
+		//myAngle += mySpeed * florp::app::Timing::DeltaTime;
+		//glm::vec3 newPos = glm::translate(glm::mat4_cast(glm::angleAxis(glm::radians(myAngle), myUp)), myCenter) * glm::vec4(myStartingPos, 1.0f);
+		//transform.SetPosition(newPos);
 	}
 
 private:

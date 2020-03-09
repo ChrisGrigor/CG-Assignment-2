@@ -8,6 +8,8 @@
 #include <imgui.h>
 #include "PointLightComponent.h"
 
+//#define USING_WORLDSPACE_LIGHTING true
+
 void LightingLayer::OnWindowResize(uint32_t width, uint32_t height) {
 	myAccumulationBuffer->Resize(width, height);
 }
@@ -16,6 +18,8 @@ void LightingLayer::Initialize() {
 	florp::app::Application* app = florp::app::Application::Get();
 	
 	using namespace florp::graphics;
+
+	isProcessingShadows = isProcessingPointLights = true;
 
 	// We'll set our ambient light to be some very small amount (this will be for the entire scene)
 	myAmbientLight = glm::vec3(0.01f);
@@ -84,77 +88,79 @@ void LightingLayer::Initialize() {
 }
 
 void LightingLayer::PreRender()
-{ 
-	using namespace florp::game;
-	using namespace florp::graphics;
+{
+	if (isProcessingShadows) {
+		using namespace florp::game;
+		using namespace florp::graphics;
 
-	auto& ecs = CurrentRegistry();
+		auto& ecs = CurrentRegistry();
 
-	// We'll only handle stuff if we actually have a shadow casting light in the scene
-	auto view = ecs.view<ShadowLight>();
-	if (view.size() > 0) {
-		// We'll make sure depth testing and culling are enabled
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_CULL_FACE);
-		glCullFace(GL_FRONT); // enable front face culling
+		// We'll only handle stuff if we actually have a shadow casting light in the scene
+		auto view = ecs.view<ShadowLight>();
+		if (view.size() > 0) {
+			// We'll make sure depth testing and culling are enabled
+			glEnable(GL_DEPTH_TEST);
+			glEnable(GL_CULL_FACE);
+			glCullFace(GL_FRONT); // enable front face culling
 
-		// Iterate over all the shadow casting lights
-		Shader::Sptr shader = nullptr;
-		ecs.view<ShadowLight>().each([&](auto entity, ShadowLight& light) {
-			// Get the light's transform
-			const Transform& lightTransform = ecs.get<Transform>(entity);
+			// Iterate over all the shadow casting lights
+			Shader::Sptr shader = nullptr;
+			ecs.view<ShadowLight>().each([&](auto entity, ShadowLight& light) {
+				// Get the light's transform
+				const Transform& lightTransform = ecs.get<Transform>(entity);
 
-			// Select which shader to use depending on if the light has a mask or not
-			if (light.Mask == nullptr) {
-				shader = myShader;
-			}
-			else {
-				shader = myMaskedShader;
-				light.Mask->Bind(0);
-			}
-			// Use the shader, and tell it what our output resolution is
-			shader->Use();
-			shader->SetUniform("a_OutputResolution", (glm::vec2)light.ShadowBuffer->GetSize());
+				// Select which shader to use depending on if the light has a mask or not
+				if (light.Mask == nullptr) {
+					shader = myShader;
+				}
+				else {
+					shader = myMaskedShader;
+					light.Mask->Bind(0);
+				}
+				// Use the shader, and tell it what our output resolution is
+				shader->Use();
+				shader->SetUniform("a_OutputResolution", (glm::vec2)light.ShadowBuffer->GetSize());
 
-			// Bind, viewport, and clear
-			light.ShadowBuffer->Bind();
-			glViewport(0, 0, light.ShadowBuffer->GetWidth(), light.ShadowBuffer->GetHeight());
-			glClear(GL_DEPTH_BUFFER_BIT);
+				// Bind, viewport, and clear
+				light.ShadowBuffer->Bind();
+				glViewport(0, 0, light.ShadowBuffer->GetWidth(), light.ShadowBuffer->GetHeight());
+				glClear(GL_DEPTH_BUFFER_BIT);
 
-			// Determine the position and matrices for the light
-			glm::vec3 position = lightTransform.GetLocalPosition();
-			glm::mat4 viewMatrix = glm::inverse(lightTransform.GetWorldTransform());
-			glm::mat4 viewProjection = light.Projection * viewMatrix;
+				// Determine the position and matrices for the light
+				glm::vec3 position = lightTransform.GetLocalPosition();
+				glm::mat4 viewMatrix = glm::inverse(lightTransform.GetWorldTransform());
+				glm::mat4 viewProjection = light.Projection * viewMatrix;
 
-			// We're going to iterate over every renderable component
-			auto view = ecs.view<RenderableComponent>();
+				// We're going to iterate over every renderable component
+				auto view = ecs.view<RenderableComponent>();
 
-			for (const auto& entity : view) {
-				// Get our shader
-				const RenderableComponent& renderer = ecs.get<RenderableComponent>(entity);
+				for (const auto& entity : view) {
+					// Get our shader
+					const RenderableComponent& renderer = ecs.get<RenderableComponent>(entity);
 
-				// Early bail if mesh is invalid (or if if does not cast a shadow)
-				if (renderer.Mesh == nullptr || renderer.Material == nullptr || !renderer.Material->IsShadowCaster)
-					continue;
-								
-				// We'll need some info about the entities position in the world
-				const Transform& transform = ecs.get_or_assign<Transform>(entity);
+					// Early bail if mesh is invalid (or if if does not cast a shadow)
+					if (renderer.Mesh == nullptr || renderer.Material == nullptr || !renderer.Material->IsShadowCaster)
+						continue;
 
-				// Update the MVP using the item's transform
-				shader->SetUniform(
-					"a_ModelViewProjection",
-					viewProjection *
-					transform.GetWorldTransform());
+					// We'll need some info about the entities position in the world
+					const Transform& transform = ecs.get_or_assign<Transform>(entity);
 
-				// Draw the item
-				renderer.Mesh->Draw(); 
-			}
+					// Update the MVP using the item's transform
+					shader->SetUniform(
+						"a_ModelViewProjection",
+						viewProjection *
+						transform.GetWorldTransform());
 
-			// Unbind so that we can use the texture later
-			light.ShadowBuffer->UnBind();
-		});
+					// Draw the item
+					renderer.Mesh->Draw();
+				}
 
-		glCullFace(GL_BACK); // enable back face culling
+				// Unbind so that we can use the texture later
+				light.ShadowBuffer->UnBind();
+				});
+
+			glCullFace(GL_BACK); // enable back face culling
+		}
 	}
 }
 
@@ -179,8 +185,8 @@ void LightingLayer::PostRender() {
 	glBlendFunc(GL_ONE, GL_ONE);
 	
 	// Do our light post processing
-	PostProcessShadows();
-	PostProcessLights();
+	if (isProcessingShadows) { PostProcessShadows(); }
+	if (isProcessingPointLights) { PostProcessLights(); }
 	
 	// Unbind the accumulation buffer so we can blend it with the main scene
 	myAccumulationBuffer->UnBind();
@@ -192,9 +198,12 @@ void LightingLayer::PostRender() {
 	mainBuffer->Bind();
 	// We'll use an additive shader for now, this should be a multiply with the albedo of the scene
 	myFinalComposite->Use();
+	
 	// We'll combine the GBuffer color and our lighting contributions
 	mainBuffer->Bind(1, RenderTargetAttachment::Color0);
+	mainBuffer->Bind(3, RenderTargetAttachment::Color2); // Bind the emissive buffer (Color2) to texture slot 3
 	myAccumulationBuffer->Bind(2);
+	
 	// Render the quad
 	myFullscreenQuad->Draw();
 	// Unbind main buffer to perform multisample blitting
@@ -213,6 +222,9 @@ void LightingLayer::RenderGUI()
 	}
 	// We'll have a color picker for the ambient light color
 	ImGui::ColorEdit3("Ambient", &myAmbientLight.x);
+
+	ImGui::Checkbox("Process Shadows", &isProcessingShadows);
+	ImGui::Checkbox("Process Point Lights", &isProcessingPointLights);
 	
 	ImGui::End();
 }
@@ -256,28 +268,33 @@ void LightingLayer::PostProcessShadows() {
 		view.each([&](auto entity, ShadowLight& light) {
 			// Upload light information to the shader
 			const florp::game::Transform& transform = ecs.get_or_assign<florp::game::Transform>(entity);
-			glm::vec3 pos = glm::vec3(transform.GetWorldTransform() * glm::vec4(0, 0, 0, 1));
+			
+			//static_assert(USING_WORLDSPACE_LIGHTING);
+			glm::mat4 lightspaceMatrix = state.Current.View * transform.GetWorldTransform();
+			glm::vec3 pos = glm::vec3(lightspaceMatrix * glm::vec4(0, 0, 0, 1)); // Updated
 
 			// If the light has a projector image, we'll treat it as a projector instead
 			if (light.ProjectorImage != nullptr) {
 				myShadowComposite->SetUniform("b_IsProjector", 1);
 				myShadowComposite->SetUniform("a_ProjectorIntensity", light.ProjectorImageIntensity);
 				light.ProjectorImage->Bind(4);
-			} else { 
+			}
+			else {
 				myShadowComposite->SetUniform("b_IsProjector", 0);
 			}
 
 			// Upload the light info to the shader
-			myShadowComposite->SetUniform("a_LightView", light.Projection * glm::inverse(transform.GetWorldTransform()));
+			myShadowComposite->SetUniform("a_LightView", light.Projection * glm::inverse(lightspaceMatrix));
 			myShadowComposite->SetUniform("a_LightPos", pos);
-			myShadowComposite->SetUniform("a_LightDir", glm::mat3(transform.GetWorldTransform()) * glm::vec3(0, 0, -1));
+			myShadowComposite->SetUniform("a_LightDir", glm::mat3(lightspaceMatrix) * glm::vec3(0, 0, -1));
 			myShadowComposite->SetUniform("a_LightColor", light.Color);
-			myShadowComposite->SetUniform("a_LightAttenuation", light.Attenuation); 
-			
+			myShadowComposite->SetUniform("a_LightAttenuation", light.Attenuation);
+			myShadowComposite->SetUniform("a_EnabledLights", numLights);
+
 			// Bind the light's depth and render the quad
 			light.ShadowBuffer->Bind(2, RenderTargetAttachment::Depth);
 			myFullscreenQuad->Draw();
-		});
+			});
 	}
 }
 
@@ -292,9 +309,9 @@ void LightingLayer::PostProcessLights() {
 	
 	// We set up all the camera state once, since we use the same shader for compositing all shadow-casting lights
 	myPointLightComposite->Use();
+	myPointLightComposite->SetUniform("a_EnabledLights", numLights);
 	myPointLightComposite->SetUniform("a_View", state.Current.View);
-	glm::mat4 viewInv = glm::inverse(state.Current.View);
-	myPointLightComposite->SetUniform("a_CameraPos", glm::vec3(viewInv * glm::vec4(0, 0, 0, 1)));
+	myPointLightComposite->SetUniform("a_ProjectionInv", glm::inverse(state.Current.Projection));
 	myPointLightComposite->SetUniform("a_ViewProjectionInv", glm::inverse(state.Current.ViewProjection));
 	myPointLightComposite->SetUniform("a_MatShininess", 1.0f); // This should be from the GBuffer
 
@@ -309,9 +326,12 @@ void LightingLayer::PostProcessLights() {
 		view.each([&](auto entity, PointLightComponent& light) {
 			// Upload light information to the shader
 			const florp::game::Transform& transform = ecs.get_or_assign<florp::game::Transform>(entity);
-			glm::vec3 pos = glm::vec3(transform.GetWorldTransform() * glm::vec4(0, 0, 0, 1));
+			//static_assert(USING_WORLDSPACE_LIGHTING); // We need to multiply the transform by the camera's view matrix
+			//glm::vec3 pos = glm::vec3(transform.GetWorldTransform() * glm::vec4(0, 0, 0, 1));
+			glm::vec3 pos = glm::vec3(state.Current.View * transform.GetWorldTransform() * glm::vec4(0, 0, 0, 1));
 			
 			// Upload the light info to the shader
+			myPointLightComposite->SetUniform("a_EnabledLights", numLights);
 			myPointLightComposite->SetUniform("a_LightPos", pos);
 			myPointLightComposite->SetUniform("a_LightColor", light.Color);
 			myPointLightComposite->SetUniform("a_LightAttenuation", light.Attenuation);

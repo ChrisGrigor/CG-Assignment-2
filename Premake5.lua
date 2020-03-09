@@ -1,5 +1,5 @@
 -- Graphics with Object Oriented Programming (GOOP) Framework
--- Shawn Matthews (Jan 1st, 2020)
+-- Shawn Matthews (Jan 1st, 2020), 2BD Group for Assignment 2
 
 -- This premake file sets up an easy to use framework for developing graphics applications, and allows easy addition
 -- of other frameworks and libraries where required.

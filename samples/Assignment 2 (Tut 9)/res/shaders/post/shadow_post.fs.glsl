@@ -16,8 +16,6 @@ uniform mat4 a_ViewInv;
 uniform mat4 a_ProjectionInv;
 // The inverse of the camera's view-project matrix (clip->world)
 uniform mat4 a_ViewProjectionInv;
-// The position of the camera, in world space
-uniform vec3 a_CameraPos;
 
 // The near and far clip planes for the camera
 uniform float a_NearPlane;
@@ -64,6 +62,19 @@ vec4 GetWorldPos(vec2 uv) {
 	return worldPos;
 }
 
+// Calculates a position in view space from the main camera's depth buffer
+vec4 GetViewPos(vec2 uv) {
+	// Get the depth buffer value at this pixel.    
+	float zOverW = texture(s_CameraDepth, uv).r * 2 - 1;
+	// H is the viewport position at this pixel in the range -1 to 1.    
+	vec4 currentPos = vec4(uv.xy * 2 - 1, zOverW, 1);
+	// Transform by the view-projection inverse.    
+	vec4 D = a_ProjectionInv * currentPos;
+	// Divide by w to get the world position.    
+	vec4 viewPos = D / D.w;
+	return viewPos;
+}
+
 // Caluclate the blinn-phong factor
 vec3 BlinnPhong(vec3 fragPos, vec3 fragNorm, vec3 lightPosition, vec3 lightColor, float lAttenuation, float shadowFactor) {
 	// Determine the direction from the position to the light
@@ -74,8 +85,8 @@ vec3 BlinnPhong(vec3 fragPos, vec3 fragNorm, vec3 lightPosition, vec3 lightColor
 	// Normalize our toLight vector
 	toLight = normalize(toLight);
 
-	// Determine the direction between the camera and the pixel
-	vec3 viewDir = normalize(a_CameraPos - fragPos);
+	// Determine the direction between the camera and the pixel (camera is now at 0,0,0)
+	vec3 viewDir = normalize(-fragPos);
 
 	// Calculate the halfway vector between the direction to the light and the direction to the eye
 	vec3 halfDir = normalize(toLight + viewDir);
@@ -120,16 +131,16 @@ float PCF(vec3 fragPos, float bias) {
 }
 
 void main() {
-	vec4 worldPos = GetWorldPos(inUV);       // Extract the world position from the depth buffer
-	vec4 shadowPos = a_LightView * worldPos; // Determine the position in light clip space
+	vec4 pos = GetViewPos(inUV);             // Extract the view position from the depth buffer
+	vec4 shadowPos = a_LightView * pos;      // Determine the position in light clip space
 	shadowPos /= shadowPos.w;                // Perspective divide
 	shadowPos = shadowPos * 0.5 + 0.5;       // Normalize from clip space to [0,1]
 
 	// Extract our normal from the G Buffer
-	vec3 worldNormal = UnpackNormal(texture(s_GNormal, inUV).rgb);
+	vec3 normal = UnpackNormal(texture(s_GNormal, inUV).rgb);
 
 	// Determine our biasing factor, we have a higher bias the closer the surface is to being parallell
-	float bias = max((a_Bias * 10) * (1.0 - dot(worldNormal, a_LightDir)), a_Bias);
+	float bias = max((a_Bias * 10) * (1.0 - dot(normal, a_LightDir)), a_Bias);
 	// Determine our shadow factor using PCF
 	float shadow = PCF(shadowPos.xyz, bias);
 	// If we are outside of the range of our shadow texture, we set shadow to zero
@@ -151,10 +162,10 @@ void main() {
 		// We can think of our projection texture as a filter over our light, so we can multiply them
 		vec3 color = texture(s_Projection, shadowPos.xy).rgb * a_LightColor;
 		// We can do our blinn-phong model using the calculated light to be projected
-		result = BlinnPhong(worldPos.xyz, worldNormal, a_LightPos, color, a_LightAttenuation, shadow);
+		result = BlinnPhong(pos.xyz, normal, a_LightPos, color, a_LightAttenuation, shadow);
 	} else {
 		// This is not a projector, just do the normal blinn-phong model using the lights color
-		result = BlinnPhong(worldPos.xyz, worldNormal, a_LightPos, a_LightColor, a_LightAttenuation, shadow);
+		result = BlinnPhong(pos.xyz, normal, a_LightPos, a_LightColor, a_LightAttenuation, shadow);
 	}
 	// Output the result
 	outColor = vec4(result, 1.0);

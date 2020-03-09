@@ -12,7 +12,7 @@ layout (location = 3) out vec2 outUV;
 
 uniform mat4 a_ModelViewProjection;
 uniform mat4 a_Model;
-uniform mat4 a_ModelView;
+uniform mat4 a_View;
 uniform mat3 a_NormalMatrix;
 
 void main() {

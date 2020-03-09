@@ -8,6 +8,9 @@
 #include "layers/LightingLayer.h"
 #include "florp/graphics/TextureCube.h"
 
+#define TUTORIAL_STAGE_1 true
+#define TUTORIAL_STAGE_2 false
+
 int main()
 {
 	{

@@ -6,6 +6,8 @@
 #include "CameraComponent.h"
 #include "FrameState.h"
 
+//#define USING_WORLDSPACE_LIGHTING true
+
 typedef florp::game::RenderableComponent Renderable;
 
 void sortRenderers(entt::registry& reg) {
@@ -95,7 +97,7 @@ void RenderLayer::Render()
 			if (renderer.Material->GetShader() != boundShader) {
 				boundShader = renderer.Material->GetShader();
 				boundShader->Use();
-				boundShader->SetUniform("a_CameraPos", position);
+				//boundShader->SetUniform("a_CameraPos", position);
 				boundShader->SetUniform("a_Time", florp::app::Timing::GameTime);
 			}
 
@@ -109,7 +111,9 @@ void RenderLayer::Render()
 			const Transform& transform = ecs.get_or_assign<Transform>(entity);
 
 			// Our normal matrix is the inverse-transpose of our object's world rotation
-			glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(transform.GetWorldTransform())));
+			//static_assert(USING_WORLDSPACE_LIGHTING); // We need to multiply the inner transform by the camera's view matrix
+			//glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(transform.GetWorldTransform())));
+			glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(viewMatrix * transform.GetWorldTransform())));
 
 			// Update the MVP using the item's transform
 			boundShader->SetUniform(
