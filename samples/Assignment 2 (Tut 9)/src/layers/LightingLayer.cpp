@@ -198,6 +198,7 @@ void LightingLayer::PostRender() {
 	mainBuffer->Bind();
 	// We'll use an additive shader for now, this should be a multiply with the albedo of the scene
 	myFinalComposite->Use();
+	myFinalComposite->SetUniform("a_EnabledLights", numLights1);//test
 	
 	// We'll combine the GBuffer color and our lighting contributions
 	mainBuffer->Bind(1, RenderTargetAttachment::Color0);
@@ -246,6 +247,7 @@ void LightingLayer::PostProcessShadows() {
 
 	// We set up all the camera state once, since we use the same shader for compositing all shadow-casting lights
 	myShadowComposite->Use();
+	myShadowComposite->SetUniform("a_EnabledLights", numLights1);
 	myShadowComposite->SetUniform("a_View", state.Current.View);
 	glm::mat4 viewInv = glm::inverse(state.Current.View);
 	myShadowComposite->SetUniform("a_ViewInv", viewInv);
@@ -284,12 +286,12 @@ void LightingLayer::PostProcessShadows() {
 			}
 
 			// Upload the light info to the shader
+			myShadowComposite->SetUniform("a_EnabledLights", numLights1);
 			myShadowComposite->SetUniform("a_LightView", light.Projection * glm::inverse(lightspaceMatrix));
 			myShadowComposite->SetUniform("a_LightPos", pos);
 			myShadowComposite->SetUniform("a_LightDir", glm::mat3(lightspaceMatrix) * glm::vec3(0, 0, -1));
 			myShadowComposite->SetUniform("a_LightColor", light.Color);
 			myShadowComposite->SetUniform("a_LightAttenuation", light.Attenuation);
-			myShadowComposite->SetUniform("a_EnabledLights", numLights);
 
 			// Bind the light's depth and render the quad
 			light.ShadowBuffer->Bind(2, RenderTargetAttachment::Depth);
@@ -309,7 +311,7 @@ void LightingLayer::PostProcessLights() {
 	
 	// We set up all the camera state once, since we use the same shader for compositing all shadow-casting lights
 	myPointLightComposite->Use();
-	myPointLightComposite->SetUniform("a_EnabledLights", numLights);
+	myPointLightComposite->SetUniform("a_EnabledLights", numLights1);
 	myPointLightComposite->SetUniform("a_View", state.Current.View);
 	myPointLightComposite->SetUniform("a_ProjectionInv", glm::inverse(state.Current.Projection));
 	myPointLightComposite->SetUniform("a_ViewProjectionInv", glm::inverse(state.Current.ViewProjection));
@@ -331,7 +333,7 @@ void LightingLayer::PostProcessLights() {
 			glm::vec3 pos = glm::vec3(state.Current.View * transform.GetWorldTransform() * glm::vec4(0, 0, 0, 1));
 			
 			// Upload the light info to the shader
-			myPointLightComposite->SetUniform("a_EnabledLights", numLights);
+			myPointLightComposite->SetUniform("a_EnabledLights", numLights1);
 			myPointLightComposite->SetUniform("a_LightPos", pos);
 			myPointLightComposite->SetUniform("a_LightColor", light.Color);
 			myPointLightComposite->SetUniform("a_LightAttenuation", light.Attenuation);

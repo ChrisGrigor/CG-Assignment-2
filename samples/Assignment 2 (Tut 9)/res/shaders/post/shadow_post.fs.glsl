@@ -44,6 +44,17 @@ uniform float a_ProjectorIntensity;
 const vec3 HALF = vec3(0.5);
 const vec3 DOUBLE = vec3(2.0);
 
+
+//For light toggling
+const int MAX_LIGHTS = 25;
+struct Light{
+	vec3  Pos;
+	vec3  Color;
+	float Attenuation;
+};
+uniform Light a_Lights[MAX_LIGHTS];
+uniform int a_EnabledLights;
+
 // Unpacks a normal from the [0,1] range to the [-1, 1] range
 vec3 UnpackNormal(vec3 rawNormal) {
 	return (rawNormal - HALF) * DOUBLE;
@@ -151,6 +162,7 @@ void main() {
 	}
 
 	vec3 result = vec3(0.0);
+	for (int i = 0; (i < a_EnabledLights) && (i < MAX_LIGHTS); i++) {
 	// If this light is a projector, we handle things a little differently
     if (b_IsProjector) {
 		// If the point we're trying to shade is outside of the lights clip region, we will simply discard and do no lighting
@@ -167,6 +179,9 @@ void main() {
 		// This is not a projector, just do the normal blinn-phong model using the lights color
 		result = BlinnPhong(pos.xyz, normal, a_LightPos, a_LightColor, a_LightAttenuation, shadow);
 	}
+	}
+
+	
 	// Output the result
 	outColor = vec4(result, 1.0);
 }

@@ -117,7 +117,7 @@ void PostLayer::Initialize() {
 	}
 
 	// Toon Shading
-	//if (true) {
+	//if (false) {
 	//	// Our inputs will be the previous pass, and the depth buffer from the main pass
 	//	auto Toon = __CreatePass("shaders/post/Toon_Shading.fs.glsl");
 	//

@@ -168,7 +168,7 @@ void SceneBuilder::Initialize()
 
 	float step = glm::two_pi<float>() / numLights; // Determine the angle between monkeys in radians
 	
-	// We'll create a ring of point lights behind each monkey (where each monkey used to be)
+	// We'll create a ring of point lights
 	for (int ix = 0; ix < numLights; ix++) {
 		// We'll attach an indicator cube to all the lights, and align it with the light's facing
 		entt::entity entity = scene->CreateEntity();
@@ -228,10 +228,6 @@ void SceneBuilder::Initialize()
 			if (window->IsKeyDown(florp::app::Key::J)) {//charMat->Set("a_Lights[0].Pos", { (lightPos.x + -0.4), lightPos.y, 1 });
 			}
 		};
-
-		//This will apply the movement function
-		//auto& MoveChar = ecs.get_or_assign<UpdateBehaviour>(MainChar);
-		//MoveChar.Function = moveJohnny;
 	}
 	
 	// The room
@@ -310,8 +306,36 @@ void SceneBuilder::Initialize()
 		renderable.Material->RasterState.FrontFaceFill = FillMode::Fill;
 		renderable.Material->RasterState.BackFaceFill = FillMode::Fill;
 	}
+	//Main Light
+	{
+		entt::entity lightEnt1 = entt::null;
+		auto& light1 = CreateShadowCaster(
+			scene, &lightEnt1,
+			glm::vec3(1.0f, 1.5f, 1.0f),											 // Light in Center
+			glm::vec3(0.0f),                                                         // Look at the center
+			glm::vec3(0.0f, 1.0f, 0.0f),                                             // Y is up
+			25.0f,                                                                   // The far plane is 25 units away
+			75.0f);                                                                  // We'll use a 75 degree field of view
+		// We'll generate a color for the light
+		light1.Color = glm::vec3(1.0f, 0.64f, 0.0f) * 0.2f;
+		light1.Attenuation = 1.0f / 5.0f;
+		scene->AddBehaviour<LightFlickerBehaviour>(lightEnt1, 5.0f, 0.5f, 1.0f);
+		//Movement
+		Transform& t1 = scene->Registry().get<Transform>(lightEnt1);
+		scene->AddBehaviour<MoveBehaviour>(lightEnt1, glm::vec3(1.0f)); //Light moving hard to see light, but cube is visible
+
+		// We'll attach an indicator cube to all the lights, and align it with the light's facing
+		entt::entity entity = scene->CreateEntity();
+		RenderableComponent& renderable = scene->Registry().assign<RenderableComponent>(entity);
+		renderable.Mesh = indicatorMesh;
+		renderable.Material = matWireframe;
+		renderable.Material->RasterState.FrontFaceFill = FillMode::Line;
+		renderable.Material->RasterState.BackFaceFill = FillMode::Line;
+		Transform& t = scene->Registry().get<Transform>(entity);
+		scene->AddBehaviour<MoveBehaviour>(entity, glm::vec3(1.0f));
+	}
 		
-	// We'll create a ring of shadow casting lights, one for each monkey
+	// We'll create a ring of shadow casting lights, one for each sphere
 	for (int ix = 0; ix < numLights; ix++) {
 		entt::entity lightEnt = entt::null;
 		auto& light = CreateShadowCaster(
@@ -326,7 +350,7 @@ void SceneBuilder::Initialize()
 		light.Attenuation = 1.0f / 5.0f;
 		scene->AddBehaviour<LightFlickerBehaviour>(lightEnt, 5.0f, 0.5f, 1.0f);
 
-		// We'll attach an indicator cube to all the lights, and align it with the light's facing
+		// We'll attach an indicator sphere to all the lights, and align it with the light's facing
 		entt::entity entity = scene->CreateEntity();
 		RenderableComponent& renderable = scene->Registry().assign<RenderableComponent>(entity);
 		renderable.Mesh = indicatorMesh;
@@ -335,34 +359,6 @@ void SceneBuilder::Initialize()
 		renderable.Material->RasterState.BackFaceFill = FillMode::Line;
 		Transform& t = scene->Registry().get<Transform>(entity);
 		t.SetPosition(glm::vec3(glm::cos(step * ix) * 9.0f, 2.0f, glm::sin(step * ix) * 9.0f));
-	}
-	//Main Light
-	{
-		entt::entity lightEnt1 = entt::null;
-		auto& light1 = CreateShadowCaster(
-			scene, &lightEnt1,
-			glm::vec3(9.0f, 3.5f, 9.0f),											 // Light in Center
-			glm::vec3(0.0f),                                                         // Look at the center
-			glm::vec3(0.0f, 1.0f, 0.0f),                                             // Y is up
-			25.0f,                                                                   // The far plane is 25 units away
-			75.0f);                                                                  // We'll use a 75 degree field of view
-		// We'll generate a color for the light
-		light1.Color = glm::vec3(1.0f, 0.64f, 0.0f) * 0.2f;
-		light1.Attenuation = 1.0f / 5.0f;
-		scene->AddBehaviour<LightFlickerBehaviour>(lightEnt1, 5.0f, 0.5f, 1.0f);
-		//Movement
-		//Transform& t1 = scene->Registry().get<Transform>(lightEnt1);
-		//scene->AddBehaviour<MoveBehaviour>(lightEnt1, glm::vec3(1.0f));
-	
-		// We'll attach an indicator cube to all the lights, and align it with the light's facing
-		entt::entity entity = scene->CreateEntity();
-		RenderableComponent& renderable = scene->Registry().assign<RenderableComponent>(entity);
-		renderable.Mesh = indicatorMesh;
-		renderable.Material = matWireframe;
-		renderable.Material->RasterState.FrontFaceFill = FillMode::Line;
-		renderable.Material->RasterState.BackFaceFill = FillMode::Line;
-		Transform& t = scene->Registry().get<Transform>(entity);
-		scene->AddBehaviour<MoveBehaviour>(entity, glm::vec3(1.0f));
 	}
 	// Our floor plane
 	{
