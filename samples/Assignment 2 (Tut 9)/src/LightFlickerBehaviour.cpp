@@ -29,6 +29,17 @@ void LightFlickerBehaviour::OnLoad(entt::entity entity)
 void LightFlickerBehaviour::Update(entt::entity entity) {
 	auto& ecs = CurrentRegistry();
 
+	//using namespace florp::app;
+	//auto& transform = CurrentRegistry().get<florp::game::Transform>(entity);
+	//
+	//transform.SetPosition(newPosition);
+	//
+	//angle += angleIncrement * florp::app::Timing::DeltaTime;
+	//radius += radiusIncrement * florp::app::Timing::DeltaTime;
+	//
+	//newPosition.x = cos(angle) * radius;
+	//newPosition.z = sin(angle) * radius;
+
 	float time = (florp::app::Timing::GameTime + myTimingOffset) * myFlickerSpeed;
 	float intensity = glm::sin(time);
 	intensity = myMin + glm::fract(intensity) * (myMax - myMin);
@@ -42,17 +53,4 @@ void LightFlickerBehaviour::Update(entt::entity entity) {
 		ShadowLight& light = ecs.get<ShadowLight>(entity);
 		light.Attenuation = attenuation;
 	}
-
-
-	//using namespace florp::app;
-	//auto& transform = CurrentRegistry().get<florp::game::Transform>(entity);
-	//newPosition.x = cos(angle) * radius;
-	//newPosition.z = sin(angle) * radius;
-	//
-	//transform.SetPosition(newPosition);
-	//
-	//angle += angleIncrement * florp::app::Timing::DeltaTime;
-	//radius += radiusIncrement * florp::app::Timing::DeltaTime;
-
-
 }

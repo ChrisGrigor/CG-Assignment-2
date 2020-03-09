@@ -3,8 +3,9 @@
 #include <florp\graphics\Shader.h>
 #include <florp\graphics\Mesh.h>
 #include "FrameBuffer.h"
+#include "SceneBuildLayer.h"
 
-class LightingLayer : public florp::app::ApplicationLayer {
+class LightingLayer : public florp::app::ApplicationLayer, public SceneBuilder {
 public:
 	// Handles resizing the accumulation buffer
 	virtual void OnWindowResize(uint32_t width, uint32_t height) override;
@@ -20,7 +21,7 @@ public:
 
 
 	//how many lights to use
-	int numLights = 10; //repeat but just don't want to inherit other class to avoid errors
+	int numLights1 = 10; //repeat but just don't want to inherit other class to avoid errors
 protected:
 	florp::graphics::Mesh::Sptr myFullscreenQuad;        // Used for our post processing passes
 	florp::graphics::Shader::Sptr myShader;              // Used to handle depth generation for regular shadow casters
